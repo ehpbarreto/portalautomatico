@@ -143,42 +143,33 @@ def ja_existe_post_semelhante(titulo):
 
 def gerar_texto(noticia, conteudo_base):
     prompt = f"""
-Você é um redator profissional de um portal de notícias brasileiro regional.
+Você é um redator profissional de um portal de notícias brasileiro.
 
-Seu trabalho é criar uma matéria em português do Brasil com base em uma notícia real.
+Crie uma matéria com base nas informações abaixo.
 
 DADOS:
 - Manchete original: {noticia['titulo']}
-- Link da fonte: {noticia['link']}
+- Link: {noticia['link']}
 
 TRECHO EXTRAÍDO DA FONTE:
 {conteudo_base}
 
-REGRAS OBRIGATÓRIAS:
-- Escreva 100% em português do Brasil.
-- Nunca escreva em inglês.
-- Se a manchete original estiver em outro idioma, traduza o sentido e reescreva naturalmente.
-- Crie um NOVO título em português, forte e jornalístico.
-- Não copie literalmente a manchete original.
-- Não invente fatos.
-- Use apenas as informações claramente sustentadas pela manchete e pelo trecho fornecido.
-- Se o conteúdo extraído estiver fraco ou insuficiente, faça um texto curto e conservador.
-- Linguagem natural, humana e jornalística.
-- Máximo de 650 palavras.
-- Gere também:
-  - uma categoria
-  - 3 a 5 tags
+REGRAS:
+- Texto 100% em português do Brasil
+- Criar um NOVO título jornalístico
+- Não usar inglês
+- Não inventar fatos
+- Máximo 800 palavras
+- Não incluir fonte, link ou referência no final
+- Escrever como portal de notícia profissional
 
-FORMATO EXATO DA RESPOSTA:
+FORMATO:
 
 TITULO: ...
-CATEGORIA: ...
-TAGS: tag1, tag2, tag3
 TEXTO:
-<p>Primeiro parágrafo...</p>
-<p>Segundo parágrafo...</p>
-
-
+<p>Parágrafo 1</p>
+<p>Parágrafo 2</p>
+"""
 
     resp = client.responses.create(
         model="gpt-4.1-mini",
