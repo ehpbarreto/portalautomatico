@@ -164,7 +164,7 @@ REGRAS OBRIGATÓRIAS:
 - Use apenas as informações claramente sustentadas pela manchete e pelo trecho fornecido.
 - Se o conteúdo extraído estiver fraco ou insuficiente, faça um texto curto e conservador.
 - Linguagem natural, humana e jornalística.
-- Máximo de 450 palavras.
+- Máximo de 650 palavras.
 - Gere também:
   - uma categoria
   - 3 a 5 tags
@@ -210,34 +210,15 @@ def extrair_partes(texto):
         elif linha_limpa.startswith("TAGS:"):
             continue
 
+        elif linha_limpa.startswith("Fonte:"):
+            continue
+
         else:
             conteudo_linhas.append(linha)
 
     conteudo = "\n".join(conteudo_linhas).strip()
 
-    # remove linha de fonte no final
-    conteudo = conteudo.replace("Fonte:", "")
-    
     return titulo, "Geral", [], conteudo
-    titulo = ""
-    categoria = "Geral"
-    tags = []
-    conteudo = texto
-
-    linhas = texto.splitlines()
-
-    for linha in linhas:
-        linha_limpa = linha.strip()
-
-        if linha_limpa.startswith("TITULO:"):
-            titulo = linha_limpa.replace("TITULO:", "", 1).strip()
-        elif linha_limpa.startswith("CATEGORIA:"):
-            categoria = linha_limpa.replace("CATEGORIA:", "", 1).strip() or "Geral"
-        elif linha_limpa.startswith("TAGS:"):
-            bruto = linha_limpa.replace("TAGS:", "", 1).strip()
-            tags = [t.strip() for t in bruto.split(",") if t.strip()]
-
-    return titulo, categoria, tags, conteudo
 
 
 def buscar_categoria_por_nome(nome):
