@@ -29,22 +29,28 @@ def coletar_noticias():
 
 def gerar_texto(noticia):
     prompt = f"""
-Escreva uma notícia COMPLETAMENTE em português do Brasil.
+Você é um redator de portal de notícias brasileiro.
 
-Traduza o título se estiver em outro idioma.
+Sua tarefa é escrever uma matéria jornalística em português do Brasil com base em uma manchete encontrada online.
 
-Base:
-Título original: {noticia['titulo']}
-Link: {noticia['link']}
+DADOS DE ENTRADA:
+- Manchete original: {noticia['titulo']}
+- Link de referência: {noticia['link']}
 
-Regras:
-- Texto 100% em português do Brasil
-- Nunca misturar inglês
-- Tom jornalístico profissional
-- Máximo 400 palavras
-- Não inventar fatos
-- Criar um NOVO título em português
-- No final colocar: Fonte: {noticia['link']}
+INSTRUÇÕES OBRIGATÓRIAS:
+- Escreva TUDO em português do Brasil.
+- Não use inglês em nenhuma parte da resposta.
+- Se a manchete original estiver em inglês, traduza o sentido e reescreva em português.
+- Crie um novo título em português, natural e jornalístico.
+- Não copie a manchete original literalmente.
+- Não invente fatos que não estejam claramente indicados no tema.
+- Escreva de forma objetiva, como portal de notícias.
+- Máximo de 400 palavras.
+- Ao final, escreva: Fonte: {noticia['link']}
+
+FORMATO DA RESPOSTA:
+Título: [crie um título em português]
+Texto: [escreva a matéria completa em português]
 """
 
     resp = client.responses.create(
