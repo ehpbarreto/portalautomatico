@@ -1,6 +1,4 @@
 import os
-import re
-import html
 import requests
 import feedparser
 from bs4 import BeautifulSoup
@@ -13,345 +11,191 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
+HEADERS = {"User-Agent": "Mozilla/5.0"}
+
+# =========================
+# FEEDS
+# =========================
+
 feeds = [
-    "https://news.google.com/rss/search?q=Campos+dos+Goytacazes+when:7d&hl=pt-BR&gl=BR&ceid=BR:pt-419",
-    "https://news.google.com/rss/search?q=Macae+when:7d&hl=pt-BR&gl=BR&ceid=BR:pt-419",
-    "https://news.google.com/rss/search?q=Regiao+dos+Lagos+when:7d&hl=pt-BR&gl=BR&ceid=BR:pt-419"
+    # G1
+    {"url": "https://g1.globo.com/rss/g1/", "categoria": "Brasil", "auto": True},
+
+    # Google News Mundo
+    {"url": "https://news.google.com/rss/search?q=mundo&hl=pt-BR&gl=BR&ceid=BR:pt-419", "categoria": "Mundo", "auto": True},
+
+    # Jovem Pan Política
+    {"url": "https://jovempan.com.br/feed", "categoria": "Política", "auto": True},
+
+    # Lance Esporte
+    {"url": "https://www.lance.com.br/rss", "categoria": "Esporte", "auto": True},
+
+    # UOL Entretenimento
+    {"url": "https://rss.uol.com.br/feed/entretenimento.xml", "categoria": "Entretenimento", "auto": True},
+
+    # Prefeituras (rascunho)
+    {"url": "https://news.google.com/rss/search?q=Campos+dos+Goytacazes+prefeitura&hl=pt-BR&gl=BR&ceid=BR:pt-419", "categoria": "Cidade", "auto": False}
 ]
 
-HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/124.0 Safari/537.36"
-    )
-}
+# =========================
+# EXTRAIR TEXTO + IMAGEM
+# =========================
 
-
-def limpar_texto(texto):
-    if not texto:
-        return ""
-    texto = html.unescape(texto)
-    texto = re.sub(r"\s+", " ", texto)
-    return texto.strip()
-
-
-def coletar_noticias():
-    noticias = []
-    vistos = set()
-
-    for feed_url in feeds:
-        feed = feedparser.parse(feed_url)
-
-        for entry in feed.entries[:5]:
-            titulo = limpar_texto(entry.get("title", ""))
-            link = entry.get("link", "")
-
-            if not titulo or not link:
-                continue
-
-            if len(titulo) < 20:
-                continue
-
-            chave = titulo.lower().strip()
-            if chave in vistos:
-                continue
-
-            vistos.add(chave)
-
-            noticias.append({
-                "titulo": titulo,
-                "link": link
-            })
-
-    return noticias[:3]
-
-
-def extrair_texto_html(html_text):
-    soup = BeautifulSoup(html_text, "lxml")
-
-    for tag in soup(["script", "style", "noscript", "header", "footer", "svg", "form"]):
-        tag.decompose()
-
-    candidatos = []
-
-    for seletor in [
-        "article",
-        "main",
-        "[role='main']",
-        ".post-content",
-        ".entry-content",
-        ".article-content",
-        ".materia-conteudo",
-        ".news-content",
-        ".content"
-    ]:
-        encontrados = soup.select(seletor)
-        for item in encontrados:
-            texto = limpar_texto(item.get_text(" ", strip=True))
-            if len(texto) > 300:
-                candidatos.append(texto)
-
-    if candidatos:
-        candidatos.sort(key=len, reverse=True)
-        return candidatos[0][:5000]
-
-    texto_total = limpar_texto(soup.get_text(" ", strip=True))
-    return texto_total[:5000]
-
-
-def baixar_conteudo_noticia(url):
+def extrair_conteudo(url):
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=20)
-        resp.raise_for_status()
-        return extrair_texto_html(resp.text)
-    except Exception as e:
-        print(f"Erro ao baixar conteúdo da notícia: {url} -> {e}")
-        return ""
+        r = requests.get(url, headers=HEADERS, timeout=15)
+        soup = BeautifulSoup(r.text, "lxml")
 
+        # texto
+        texto = soup.get_text(" ", strip=True)[:4000]
 
-def ja_existe_post_semelhante(titulo):
-    try:
-        url = f"{WP_URL}/wp-json/wp/v2/posts"
-        resp = requests.get(
-            url,
-            auth=(WP_USERNAME, WP_APP_PASSWORD),
-            params={"search": titulo, "per_page": 5},
-            timeout=20
-        )
-        if resp.status_code != 200:
-            return False
+        # imagem
+        img = None
+        img_tag = soup.find("meta", property="og:image")
+        if img_tag:
+            img = img_tag.get("content")
 
-        posts = resp.json()
-        titulo_normalizado = titulo.lower().strip()
+        return texto, img
 
-        for post in posts:
-            titulo_wp = (
-                post.get("title", {})
-                .get("rendered", "")
-                .strip()
-                .lower()
-            )
-            if titulo_wp == titulo_normalizado:
-                return True
+    except:
+        return "", None
 
-        return False
-    except Exception as e:
-        print(f"Erro ao verificar duplicidade: {e}")
-        return False
+# =========================
+# IA
+# =========================
 
-
-def gerar_texto(noticia, conteudo_base):
+def gerar_texto(titulo, conteudo):
     prompt = f"""
-Você é um redator profissional de um portal de notícias brasileiro.
+Você é um jornalista brasileiro.
 
-Crie uma matéria com base nas informações abaixo.
+Crie uma notícia profissional.
 
-DADOS:
-- Manchete original: {noticia['titulo']}
-- Link: {noticia['link']}
+Base:
+{titulo}
 
-TRECHO EXTRAÍDO DA FONTE:
-{conteudo_base}
+Conteúdo:
+{conteudo}
 
-REGRAS:
-- Texto 100% em português do Brasil
-- Criar um NOVO título jornalístico
-- Não usar inglês
+Regras:
+- Português do Brasil
+- Criar novo título
 - Não inventar fatos
-- Máximo 800 palavras
-- Não incluir fonte, link ou referência no final
-- Escrever como portal de notícia profissional
+- Não colocar fonte
+- Máximo 300 palavras
 
-FORMATO:
+Formato:
 
 TITULO: ...
 TEXTO:
-<p>Parágrafo 1</p>
-<p>Parágrafo 2</p>
+<p>...</p>
+<p>...</p>
 """
 
     resp = client.responses.create(
         model="gpt-4.1-mini",
         input=prompt
     )
+
     return resp.output_text
 
+# =========================
+# LIMPAR
+# =========================
 
-def extrair_partes(texto):
+def limpar(texto):
     titulo = ""
-    conteudo = ""
+    conteudo = []
 
-    linhas = texto.splitlines()
-    conteudo_linhas = []
-
-    for linha in linhas:
-        linha_limpa = linha.strip()
-
-        if linha_limpa.startswith("TITULO:"):
-            titulo = linha_limpa.replace("TITULO:", "").strip()
-
-        elif linha_limpa.startswith("TEXTO:"):
+    for linha in texto.splitlines():
+        if linha.startswith("TITULO:"):
+            titulo = linha.replace("TITULO:", "").strip()
+        elif linha.startswith("TEXTO:"):
             continue
-
-        elif linha_limpa.startswith("CATEGORIA:"):
-            continue
-
-        elif linha_limpa.startswith("TAGS:"):
-            continue
-
-        elif linha_limpa.startswith("Fonte:"):
-            continue
-
         else:
-            conteudo_linhas.append(linha)
+            if "Fonte:" not in linha:
+                conteudo.append(linha)
 
-    conteudo = "\n".join(conteudo_linhas).strip()
+    return titulo, "\n".join(conteudo)
 
-    return titulo, "Geral", [], conteudo
+# =========================
+# UPLOAD IMAGEM
+# =========================
 
-
-def buscar_categoria_por_nome(nome):
+def upload_imagem(url_img):
     try:
-        url = f"{WP_URL}/wp-json/wp/v2/categories"
-        resp = requests.get(
-            url,
+        img_data = requests.get(url_img).content
+
+        media = requests.post(
+            f"{WP_URL}/wp-json/wp/v2/media",
             auth=(WP_USERNAME, WP_APP_PASSWORD),
-            params={"search": nome, "per_page": 20},
-            timeout=20
-        )
-        if resp.status_code != 200:
-            return None
-
-        for item in resp.json():
-            if item.get("name", "").strip().lower() == nome.strip().lower():
-                return item["id"]
-        return None
-    except Exception as e:
-        print(f"Erro ao buscar categoria: {e}")
-        return None
-
-
-def criar_categoria(nome):
-    categoria_id = buscar_categoria_por_nome(nome)
-    if categoria_id:
-        return categoria_id
-
-    try:
-        url = f"{WP_URL}/wp-json/wp/v2/categories"
-        resp = requests.post(
-            url,
-            auth=(WP_USERNAME, WP_APP_PASSWORD),
-            json={"name": nome},
-            timeout=20
+            files={"file": ("imagem.jpg", img_data)}
         )
 
-        if resp.status_code in [200, 201]:
-            return resp.json()["id"]
+        if media.status_code in [200, 201]:
+            return media.json()["id"]
+    except:
+        pass
 
-        return None
-    except Exception as e:
-        print(f"Erro ao criar categoria: {e}")
-        return None
+    return None
 
+# =========================
+# PUBLICAR
+# =========================
 
-def buscar_tag_por_nome(nome):
-    try:
-        url = f"{WP_URL}/wp-json/wp/v2/tags"
-        resp = requests.get(
-            url,
-            auth=(WP_USERNAME, WP_APP_PASSWORD),
-            params={"search": nome, "per_page": 20},
-            timeout=20
-        )
-        if resp.status_code != 200:
-            return None
-
-        for item in resp.json():
-            if item.get("name", "").strip().lower() == nome.strip().lower():
-                return item["id"]
-        return None
-    except Exception as e:
-        print(f"Erro ao buscar tag: {e}")
-        return None
-
-
-def criar_tag(nome):
-    tag_id = buscar_tag_por_nome(nome)
-    if tag_id:
-        return tag_id
-
-    try:
-        url = f"{WP_URL}/wp-json/wp/v2/tags"
-        resp = requests.post(
-            url,
-            auth=(WP_USERNAME, WP_APP_PASSWORD),
-            json={"name": nome},
-            timeout=20
-        )
-
-        if resp.status_code in [200, 201]:
-            return resp.json()["id"]
-
-        return None
-    except Exception as e:
-        print(f"Erro ao criar tag: {e}")
-        return None
-
-
-def publicar_wp(titulo, conteudo, categoria, tags):
-    categoria_id = criar_categoria(categoria)
-    tag_ids = []
-
-    for tag in tags[:5]:
-        tag_id = criar_tag(tag)
-        if tag_id:
-            tag_ids.append(tag_id)
+def publicar(titulo, conteudo, categoria, imagem_id, auto):
+    status = "publish" if auto else "draft"
 
     payload = {
         "title": titulo,
         "content": conteudo,
-        "status": "draft",
-        "tags": tag_ids
+        "status": status
     }
 
-    if categoria_id:
-        payload["categories"] = [categoria_id]
+    if imagem_id:
+        payload["featured_media"] = imagem_id
 
-    url = f"{WP_URL}/wp-json/wp/v2/posts"
-
-    resp = requests.post(
-        url,
+    requests.post(
+        f"{WP_URL}/wp-json/wp/v2/posts",
         auth=(WP_USERNAME, WP_APP_PASSWORD),
-        json=payload,
-        timeout=30
+        json=payload
     )
 
-    print("Publicação:", resp.status_code, resp.text[:300])
-
+# =========================
+# MAIN
+# =========================
 
 def main():
-    noticias = coletar_noticias()
+    for feed in feeds:
+        data = feedparser.parse(feed["url"])
 
-    for noticia in noticias:
-        print(f"Processando: {noticia['titulo']}")
+        for entry in data.entries[:2]:
+            titulo_original = entry.title
+            link = entry.link
 
-        conteudo_base = baixar_conteudo_noticia(noticia["link"])
+            print("Processando:", titulo_original)
 
-        if not conteudo_base:
-            conteudo_base = noticia["titulo"]
+            conteudo, imagem = extrair_conteudo(link)
 
-        if len(conteudo_base) < 200:
-            print("Conteúdo fraco, vou gerar mesmo assim.")
+            if len(conteudo) < 100:
+                conteudo = titulo_original
 
-        texto = gerar_texto(noticia, conteudo_base)
-        titulo, categoria, tags, conteudo = extrair_partes(texto)
+            texto = gerar_texto(titulo_original, conteudo)
 
-        if not titulo:
-            print("Sem título gerado, pulando.")
-            continue
+            titulo, conteudo_final = limpar(texto)
 
-        publicar_wp(titulo, conteudo, categoria, tags)
+            imagem_id = None
+            if imagem:
+                imagem_id = upload_imagem(imagem)
+
+            publicar(
+                titulo,
+                conteudo_final,
+                feed["categoria"],
+                imagem_id,
+                feed["auto"]
+            )
+
 
 if __name__ == "__main__":
+    main()
     main()
