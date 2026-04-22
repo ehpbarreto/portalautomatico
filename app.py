@@ -53,7 +53,7 @@ def gerar_texto(noticia):
     - Máximo 400 palavras
     - Não inventar fatos
     - No final colocar: Fonte: {noticia['link']}
-    """
+
 
     resp = client.responses.create(
         model="gpt-4.1-mini",
