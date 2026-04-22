@@ -178,8 +178,7 @@ TEXTO:
 <p>Primeiro parágrafo...</p>
 <p>Segundo parágrafo...</p>
 
-<p><strong>Fonte:</strong> {noticia['link']}</p>
-"""
+
 
     resp = client.responses.create(
         model="gpt-4.1-mini",
