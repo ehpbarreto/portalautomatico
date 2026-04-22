@@ -11,9 +11,9 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 feeds = [
-    "https://news.google.com/rss/search?q=Campos+dos+Goytacazes",
-    "https://news.google.com/rss/search?q=Macae",
-    "https://news.google.com/rss/search?q=Regiao+dos+Lagos"
+    "https://news.google.com/rss/search?q=Campos+dos+Goytacazes+when:7d&hl=pt-BR&gl=BR&ceid=BR:pt-419",
+    "https://news.google.com/rss/search?q=Macae+when:7d&hl=pt-BR&gl=BR&ceid=BR:pt-419",
+    "https://news.google.com/rss/search?q=Regiao+dos+Lagos+when:7d&hl=pt-BR&gl=BR&ceid=BR:pt-419"
 ]
 
 def coletar_noticias():
