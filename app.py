@@ -29,31 +29,23 @@ def coletar_noticias():
 
 def gerar_texto(noticia):
     prompt = f"""
-    Escreva uma notícia COMPLETAMENTE em português do Brasil.
+Escreva uma notícia COMPLETAMENTE em português do Brasil.
 
-    Traduza o título se estiver em outro idioma.
+Traduza o título se estiver em outro idioma.
 
-    Base:
-    Título original: {noticia['titulo']}
-    Link: {noticia['link']}
+Base:
+Título original: {noticia['titulo']}
+Link: {noticia['link']}
 
-    Regras:
-    - Texto 100% em português do Brasil
-    - Nunca misturar inglês
-    - Tom jornalístico profissional
-    - Máximo 400 palavras
-    - Não inventar fatos
-    - Criar um NOVO título em português
-    - No final colocar: Fonte: {noticia['link']}
-    """
-
-    Regras:
-    - Português do Brasil
-    - Tom jornalístico
-    - Máximo 400 palavras
-    - Não inventar fatos
-    - No final colocar: Fonte: {noticia['link']}
-
+Regras:
+- Texto 100% em português do Brasil
+- Nunca misturar inglês
+- Tom jornalístico profissional
+- Máximo 400 palavras
+- Não inventar fatos
+- Criar um NOVO título em português
+- No final colocar: Fonte: {noticia['link']}
+"""
 
     resp = client.responses.create(
         model="gpt-4.1-mini",
@@ -61,7 +53,6 @@ def gerar_texto(noticia):
     )
 
     return resp.output_text
-
 def publicar_wp(titulo, conteudo):
     url = f"{WP_URL}/wp-json/wp/v2/posts"
 
