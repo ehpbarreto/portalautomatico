@@ -337,25 +337,20 @@ def main():
 
         conteudo_base = baixar_conteudo_noticia(noticia["link"])
 
-if not conteudo_base:
-    conteudo_base = noticia["titulo"]
+        if not conteudo_base:
+            conteudo_base = noticia["titulo"]
+
         if len(conteudo_base) < 200:
-            print("Conteúdo fraco, pulando.")
-            continue
+            print("Conteúdo fraco, vou gerar mesmo assim.")
 
         texto = gerar_texto(noticia, conteudo_base)
         titulo, categoria, tags, conteudo = extrair_partes(texto)
 
-        if len(conteudo_base) < 200:
-    print("Conteúdo fraco, vou gerar mesmo assim.")
-            continue
-
-        if ja_existe_post_semelhante(titulo):
-            print("Post semelhante já existe, pulando.")
+        if not titulo:
+            print("Sem título gerado, pulando.")
             continue
 
         publicar_wp(titulo, conteudo, categoria, tags)
-
 
 if __name__ == "__main__":
     main()
