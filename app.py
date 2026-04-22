@@ -190,6 +190,36 @@ TEXTO:
 
 def extrair_partes(texto):
     titulo = ""
+    conteudo = ""
+
+    linhas = texto.splitlines()
+    conteudo_linhas = []
+
+    for linha in linhas:
+        linha_limpa = linha.strip()
+
+        if linha_limpa.startswith("TITULO:"):
+            titulo = linha_limpa.replace("TITULO:", "").strip()
+
+        elif linha_limpa.startswith("TEXTO:"):
+            continue
+
+        elif linha_limpa.startswith("CATEGORIA:"):
+            continue
+
+        elif linha_limpa.startswith("TAGS:"):
+            continue
+
+        else:
+            conteudo_linhas.append(linha)
+
+    conteudo = "\n".join(conteudo_linhas).strip()
+
+    # remove linha de fonte no final
+    conteudo = conteudo.replace("Fonte:", "")
+    
+    return titulo, "Geral", [], conteudo
+    titulo = ""
     categoria = "Geral"
     tags = []
     conteudo = texto
