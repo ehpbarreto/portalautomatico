@@ -29,10 +29,23 @@ def coletar_noticias():
 
 def gerar_texto(noticia):
     prompt = f"""
-    Escreva uma notícia original baseada nisso:
+    Escreva uma notícia COMPLETAMENTE em português do Brasil.
 
-    Título: {noticia['titulo']}
+    Traduza o título se estiver em outro idioma.
+
+    Base:
+    Título original: {noticia['titulo']}
     Link: {noticia['link']}
+
+    Regras:
+    - Texto 100% em português do Brasil
+    - Nunca misturar inglês
+    - Tom jornalístico profissional
+    - Máximo 400 palavras
+    - Não inventar fatos
+    - Criar um NOVO título em português
+    - No final colocar: Fonte: {noticia['link']}
+    """
 
     Regras:
     - Português do Brasil
