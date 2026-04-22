@@ -344,8 +344,8 @@ def main():
         texto = gerar_texto(noticia, conteudo_base)
         titulo, categoria, tags, conteudo = extrair_partes(texto)
 
-        if not titulo:
-            print("Sem título gerado, pulando.")
+        if len(conteudo_base) < 200:
+    print("Conteúdo fraco, vou gerar mesmo assim.")
             continue
 
         if ja_existe_post_semelhante(titulo):
