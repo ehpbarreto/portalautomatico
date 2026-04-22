@@ -1,3 +1,5 @@
 requests
 feedparser
 openai
+beautifulsoup4
+lxml
