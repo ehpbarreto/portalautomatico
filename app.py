@@ -337,6 +337,8 @@ def main():
 
         conteudo_base = baixar_conteudo_noticia(noticia["link"])
 
+if not conteudo_base:
+    conteudo_base = noticia["titulo"]
         if len(conteudo_base) < 200:
             print("Conteúdo fraco, pulando.")
             continue
