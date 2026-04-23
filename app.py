@@ -139,6 +139,8 @@ def upload_imagem(url_img):
 # PUBLICAR
 # =========================
 
+import time
+
 def publicar(titulo, conteudo, categoria, imagem_id, auto):
     status = "publish" if auto else "draft"
 
@@ -147,6 +149,28 @@ def publicar(titulo, conteudo, categoria, imagem_id, auto):
         "content": conteudo,
         "status": status
     }
+
+    if imagem_id:
+        payload["featured_media"] = imagem_id
+
+    url = f"{WP_URL}/wp-json/wp/v2/posts"
+
+    try:
+        print("Tentando publicar em:", url)
+
+        response = requests.post(
+            url,
+            auth=(WP_USERNAME, WP_APP_PASSWORD),
+            json=payload,
+            timeout=30
+        )
+
+        print("Status:", response.status_code)
+        print("Resposta:", response.text[:200])
+
+    except Exception as e:
+        print("ERRO AO PUBLICAR:", e)
+        time.sleep(5)
 
     if imagem_id:
         payload["featured_media"] = imagem_id
