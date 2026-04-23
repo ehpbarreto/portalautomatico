@@ -13,28 +13,25 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 
+titulos_usados = set()
+
 # =========================
 # FEEDS
 # =========================
 
 feeds = [
-    # G1
+    # ===== AUTOMÁTICO =====
     {"url": "https://g1.globo.com/rss/g1/", "categoria": "Brasil", "auto": True},
-
-    # Google News Mundo
-    {"url": "https://news.google.com/rss/search?q=mundo&hl=pt-BR&gl=BR&ceid=BR:pt-419", "categoria": "Mundo", "auto": True},
-
-    # Jovem Pan Política
-    {"url": "https://jovempan.com.br/feed", "categoria": "Política", "auto": True},
-
-    # Lance Esporte
-    {"url": "https://www.lance.com.br/rss", "categoria": "Esporte", "auto": True},
-
-    # UOL Entretenimento
+    {"url": "https://g1.globo.com/economia/rss/g1/", "categoria": "Economia", "auto": True},
+    {"url": "https://g1.globo.com/mundo/rss/g1/", "categoria": "Mundo", "auto": True},
+    {"url": "https://ge.globo.com/rss/ge/", "categoria": "Esporte", "auto": True},
     {"url": "https://rss.uol.com.br/feed/entretenimento.xml", "categoria": "Entretenimento", "auto": True},
 
-    # Prefeituras (rascunho)
-    {"url": "https://news.google.com/rss/search?q=Campos+dos+Goytacazes+prefeitura&hl=pt-BR&gl=BR&ceid=BR:pt-419", "categoria": "Cidade", "auto": False}
+    # ===== REGIONAIS (RASCU NHO) =====
+    {"url": "https://www.noticiasmacae.com/feed", "categoria": "Macaé", "auto": False},
+    {"url": "https://cliquediario.com.br/feed", "categoria": "Região", "auto": False},
+    {"url": "https://riodasostrasjornal.com/feed", "categoria": "Rio das Ostras", "auto": False},
+    {"url": "https://saojoaodabarranews.com.br/feed", "categoria": "São João da Barra", "auto": False}
 ]
 
 # =========================
@@ -169,10 +166,15 @@ def main():
         data = feedparser.parse(feed["url"])
 
         for entry in data.entries[:2]:
-            titulo_original = entry.title
-            link = entry.link
+    titulo_original = entry.title
+    link = entry.link
 
-            print("Processando:", titulo_original)
+    if titulo_original in titulos_usados:
+        continue
+
+    titulos_usados.add(titulo_original)
+
+    print("Processando:", titulo_original)
 
             conteudo, imagem = extrair_conteudo(link)
 
