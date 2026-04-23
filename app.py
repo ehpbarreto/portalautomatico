@@ -176,27 +176,26 @@ def main():
 
     print("Processando:", titulo_original)
 
-            conteudo, imagem = extrair_conteudo(link)
+    conteudo, imagem = extrair_conteudo(link)
 
-            if len(conteudo) < 100:
-                conteudo = titulo_original
+    if len(conteudo) < 100:
+        conteudo = titulo_original
 
-            texto = gerar_texto(titulo_original, conteudo)
+    texto = gerar_texto(titulo_original, conteudo)
 
-            titulo, conteudo_final = limpar(texto)
+    titulo, conteudo_final = limpar(texto)
 
-            imagem_id = None
-            if imagem:
-                imagem_id = upload_imagem(imagem)
+    imagem_id = None
+    if imagem:
+        imagem_id = upload_imagem(imagem)
 
-            publicar(
-                titulo,
-                conteudo_final,
-                feed["categoria"],
-                imagem_id,
-                feed["auto"]
-            )
-
+    publicar(
+        titulo,
+        conteudo_final,
+        feed["categoria"],
+        imagem_id,
+        feed["auto"]
+    )
 
 if __name__ == "__main__":
     main()
