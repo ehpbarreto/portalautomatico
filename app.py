@@ -23,20 +23,20 @@ titulos_usados = set()
 links_usados = set()
 
 fontes = [
-    {"url": "https://g1.globo.com/rj/norte-fluminense/", "categoria": "Norte Fluminense", "auto": True, "limite": 2},
-    {"url": "https://g1.globo.com/rj/regiao-dos-lagos/", "categoria": "Região dos Lagos", "auto": True, "limite": 2},
+    {"url": "https://g1.globo.com/rj/norte-fluminense/", "categoria": "Norte Fluminense", "auto": True, "limite": 1},
+    {"url": "https://g1.globo.com/rj/regiao-dos-lagos/", "categoria": "Região dos Lagos", "auto": True, "limite": 1},
 
-    {"url": "https://www.rj.gov.br/noticias", "categoria": "Estado do RJ", "auto": False, "limite": 2},
-    {"url": "https://macae.rj.gov.br/noticias", "categoria": "Macaé", "auto": False, "limite": 2},
-    {"url": "https://www.riodasostras.rj.gov.br/noticias/", "categoria": "Rio das Ostras", "auto": False, "limite": 2},
-    {"url": "https://www.sjb.rj.gov.br/site/noticias", "categoria": "São João da Barra", "auto": False, "limite": 2},
-    {"url": "https://www.campos.rj.gov.br/ultimas-noticias.php", "categoria": "Campos", "auto": False, "limite": 2},
+    {"url": "https://www.rj.gov.br/noticias", "categoria": "Estado do RJ", "auto": False, "limite": 1},
+    {"url": "https://macae.rj.gov.br/noticias", "categoria": "Macaé", "auto": False, "limite": 1},
+    {"url": "https://www.riodasostras.rj.gov.br/noticias/", "categoria": "Rio das Ostras", "auto": False, "limite": 1},
+    {"url": "https://www.sjb.rj.gov.br/site/noticias", "categoria": "São João da Barra", "auto": False, "limite": 1},
+    {"url": "https://www.campos.rj.gov.br/ultimas-noticias.php", "categoria": "Campos", "auto": False, "limite": 1},
 
-    {"url": "https://ge.globo.com/", "categoria": "Esporte", "auto": True, "limite": 2},
-    {"url": "https://jovempan.com.br/noticias/politica", "categoria": "Política", "auto": True, "limite": 2},
-    {"url": "https://www.infomoney.com.br/ultimas-noticias/", "categoria": "Economia", "auto": True, "limite": 2},
-    {"url": "https://www.metropoles.com/entretenimento", "categoria": "Entretenimento", "auto": True, "limite": 2},
-    {"url": "https://www.cnnbrasil.com.br/internacional/", "categoria": "Mundo", "auto": True, "limite": 2},
+    {"url": "https://ge.globo.com/", "categoria": "Esporte", "auto": True, "limite": 1},
+    {"url": "https://jovempan.com.br/noticias/politica", "categoria": "Política", "auto": True, "limite": 1},
+    {"url": "https://www.infomoney.com.br/ultimas-noticias/", "categoria": "Economia", "auto": True, "limite": 1},
+    {"url": "https://www.metropoles.com/entretenimento", "categoria": "Entretenimento", "auto": True, "limite": 1},
+    {"url": "https://www.cnnbrasil.com.br/internacional/", "categoria": "Mundo", "auto": True, "limite": 1},
 ]
 
 
@@ -331,7 +331,7 @@ def upload_imagem(url_img):
                 "Content-Type": content_type
             },
             data=resp.content,
-            timeout=40
+            timeout=15
         )
 
         if media.status_code in [200, 201]:
@@ -398,7 +398,7 @@ def publicar(titulo, conteudo, categoria, imagem_id, auto):
             url,
             auth=(WP_USERNAME, WP_APP_PASSWORD),
             json=payload,
-            timeout=40
+            timeout=15
         )
 
         print("Status:", response.status_code)
