@@ -126,14 +126,14 @@ def coletar_links_da_pagina(fonte):
         if chave_titulo in titulos_usados:
             continue
          
-if "lps.infomoney" in link_lower:
-    return False
+         if "lps.infomoney" in link_lower:
+             return False
 
-if "docs.google.com" in link_lower:
-    return False
+         if "docs.google.com" in link_lower:
+             return False
 
-if "leismunicipais" in link_lower:
-    return False
+         if "leismunicipais" in link_lower:
+             return False
 
         links_usados.add(chave_link)
         titulos_usados.add(chave_titulo)
