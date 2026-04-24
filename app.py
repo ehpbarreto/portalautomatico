@@ -454,13 +454,45 @@ def main():
         itens = coletar_links_da_pagina(fonte)
 
         for item in itens:
-    if total >= MAX_TOTAL_NOTICIAS:
-        break
+            if total >= MAX_TOTAL_NOTICIAS:
+                break
 
-    sucesso = processar_noticia(item)
+            sucesso = processar_noticia(item)
 
-    if sucesso:
-        total += 1
-        print("Total publicado/processado:", total)
+            if sucesso:
+                total += 1
+                print("Total publicado/processado:", total)
 
-    time.sleep(2)
+            time.sleep(2)
+
+    print("Finalizado. Total:", total)
+
+
+def main():
+    total = 0
+
+    for fonte in fontes:
+        if total >= MAX_TOTAL_NOTICIAS:
+            break
+
+        print("Fonte:", fonte["url"])
+
+        itens = coletar_links_da_pagina(fonte)
+
+        for item in itens:
+            if total >= MAX_TOTAL_NOTICIAS:
+                break
+
+            sucesso = processar_noticia(item)
+
+            if sucesso:
+                total += 1
+                print("Total publicado/processado:", total)
+
+            time.sleep(2)
+
+    print("Finalizado. Total:", total)
+
+
+if __name__ == "__main__":
+    main()
