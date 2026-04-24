@@ -18,7 +18,7 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36"
 }
 
-MAX_TOTAL_NOTICIAS = 8
+MAX_TOTAL_NOTICIAS = 3
 titulos_usados = set()
 links_usados = set()
 
@@ -402,10 +402,12 @@ def publicar(titulo, conteudo, categoria, imagem_id, auto):
         )
 
         print("Publicação:", response.status_code, response.text[:200])
+return response.status_code in [200, 201]
 
     except Exception as e:
-        print("ERRO AO PUBLICAR:", e)
-        time.sleep(3)
+    print("ERRO AO PUBLICAR:", e)
+    time.sleep(3)
+    return False
 
 
 def processar_noticia(item):
@@ -439,7 +441,6 @@ def processar_noticia(item):
     imagem_id = None
 
     publicar(manchete, conteudo_final, categoria, imagem_id, auto)
-    return True
 
 
 def main():
@@ -463,7 +464,7 @@ def main():
                 total += 1
                 print("Total publicado/processado:", total)
 
-            time.sleep(2)
+            time.sleep(12)
 
     print("Finalizado. Total:", total)
 
@@ -489,7 +490,7 @@ def main():
                 total += 1
                 print("Total publicado/processado:", total)
 
-            time.sleep(2)
+            time.sleep(12)
 
     print("Finalizado. Total:", total)
 
