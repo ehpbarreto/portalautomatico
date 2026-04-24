@@ -3,7 +3,7 @@ import re
 import time
 import html
 import requests
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from openai import OpenAI
 
@@ -19,6 +19,7 @@ HEADERS = {
 }
 
 MAX_TOTAL_NOTICIAS = 2
+
 titulos_usados = set()
 links_usados = set()
 
@@ -30,7 +31,6 @@ fontes = [
     {"url": "https://www.riodasostras.rj.gov.br/noticias/", "categoria": "Rio das Ostras", "auto": False, "limite": 3},
     {"url": "https://www.sjb.rj.gov.br/site/noticias", "categoria": "São João da Barra", "auto": False, "limite": 3},
     {"url": "https://www.campos.rj.gov.br/ultimas-noticias.php", "categoria": "Campos", "auto": False, "limite": 3},
-    {"url": "https://www.rj.gov.br/noticias", "categoria": "Estado do RJ", "auto": False, "limite": 2},
 
     {"url": "https://ge.globo.com/", "categoria": "Esporte", "auto": True, "limite": 2},
     {"url": "https://jovempan.com.br/noticias/politica", "categoria": "Política", "auto": True, "limite": 2},
@@ -58,11 +58,14 @@ def url_valida(link):
         "facebook.com", "instagram.com", "twitter.com", "x.com",
         "youtube.com", "whatsapp", "mailto:", "tel:", "#",
         "login", "cadastro", "assinatura", "newsletter",
-        "privacy", "politica-de-privacidade", "termos"
+        "privacy", "politica-de-privacidade", "termos",
+        "lps.infomoney", "docs.google.com", "leismunicipais",
+        "planner", "formulario", "formulário"
     ]
 
-    if any(b in link_lower for b in bloqueios):
-        return False
+    for bloqueio in bloqueios:
+        if bloqueio in link_lower:
+            return False
 
     if link_lower.endswith((".jpg", ".jpeg", ".png", ".webp", ".gif", ".pdf", ".mp4")):
         return False
@@ -76,20 +79,28 @@ def titulo_valido(titulo):
 
     t = titulo.lower().strip()
 
-    if len(t) < 12:
+    if len(t) < 15:
         return False
 
     ruins = [
-    "pular para o conteúdo","últimas notícias","ultimas noticias",
-    "bom dia","inter tv","rota inter","acessibilidade","contatos",
-    "órgãos","orgaosmunicipais","vídeos","videos",
-    "região dos lagos","norte fluminense","inter tv rural","rota inter tv","planner",
-"mapa do site","cadastro","licitações","licitacoes","google","docs.google",
-        "formulário","formulario","infomoney","metropoles.com","cnnbrasil.com.br"
-]
+        "menu", "buscar", "pesquisar", "compartilhar", "facebook",
+        "instagram", "youtube", "newsletter", "publicidade",
+        "home", "início", "politica de privacidade",
+        "pular para o conteúdo", "últimas notícias", "ultimas noticias",
+        "bom dia", "inter tv", "rota inter", "inter tv rural",
+        "acessibilidade", "contatos", "órgãos", "orgaosmunicipais",
+        "vídeos", "videos", "mapa do site", "cadastro",
+        "licitações", "licitacoes", "planner gratuito",
+        "dinheiro diário", "metropoles.com", "cnnbrasil.com.br",
+        "região dos lagos", "norte fluminense", "aplicação visual",
+        "estrutura pmm", "concursos públicos", "alto contraste",
+        "poder executivo", "ir para a busca", "lista de leis municipais",
+        "avisos e editais", "cadastro de fornecedores"
+    ]
 
-    if any(r in t for r in ruins):
-        return False
+    for ruim in ruins:
+        if ruim in t:
+            return False
 
     return True
 
@@ -125,15 +136,6 @@ def coletar_links_da_pagina(fonte):
 
         if chave_titulo in titulos_usados:
             continue
-         
-         if "lps.infomoney" in link_lower:
-             return False
-
-         if "docs.google.com" in link_lower:
-             return False
-
-         if "leismunicipais" in link_lower:
-             return False
 
         links_usados.add(chave_link)
         titulos_usados.add(chave_titulo)
@@ -167,26 +169,13 @@ def extrair_conteudo(url):
         if og_img and og_img.get("content"):
             imagem = og_img.get("content")
 
-        if not imagem:
-            img = soup.find("img")
-            if img and img.get("src"):
-                imagem = urljoin(url, img.get("src"))
-
         candidatos = []
 
         seletores = [
-            "article",
-            "main",
-            "[role='main']",
-            ".mc-article-body",
-            ".content-text",
-            ".entry-content",
-            ".post-content",
-            ".article-content",
-            ".news-content",
-            ".materia-conteudo",
-            ".texto",
-            ".conteudo"
+            "article", "main", "[role='main']",
+            ".mc-article-body", ".content-text", ".entry-content",
+            ".post-content", ".article-content", ".news-content",
+            ".materia-conteudo", ".texto", ".conteudo"
         ]
 
         for seletor in seletores:
@@ -303,93 +292,9 @@ def buscar_categoria(nome):
         return None
 
 
-def criar_categoria(nome):
-    existente = buscar_categoria(nome)
-    if existente:
-        return existente
-
-    try:
-        resp = requests.post(
-            f"{WP_URL}/wp-json/wp/v2/categories",
-            auth=(WP_USERNAME, WP_APP_PASSWORD),
-            json={"name": nome},
-            timeout=20
-        )
-
-        if resp.status_code in [200, 201]:
-            return resp.json()["id"]
-
-        print("Erro criando categoria:", resp.status_code, resp.text[:200])
-        return None
-
-    except Exception as e:
-        print("Erro ao criar categoria:", e)
-        return None
-
-
-def upload_imagem(url_img):
-    if not url_img:
-        return None
-
-    try:
-        resp = requests.get(url_img, headers=HEADERS, timeout=15)
-        resp.raise_for_status()
-
-        content_type = resp.headers.get("Content-Type", "image/jpeg")
-
-        if "image" not in content_type:
-            return None
-
-        media = requests.post(
-            f"{WP_URL}/wp-json/wp/v2/media",
-            auth=(WP_USERNAME, WP_APP_PASSWORD),
-            headers={
-                "Content-Disposition": "attachment; filename=noticia.jpg",
-                "Content-Type": content_type
-            },
-            data=resp.content,
-            timeout=20
-        )
-
-        if media.status_code in [200, 201]:
-            return media.json().get("id")
-
-        print("Erro upload imagem:", media.status_code, media.text[:200])
-        return None
-
-    except Exception as e:
-        print("Erro ao subir imagem:", e)
-        return None
-
-
-def ja_existe_no_wordpress(titulo):
-    try:
-        resp = requests.get(
-            f"{WP_URL}/wp-json/wp/v2/posts",
-            auth=(WP_USERNAME, WP_APP_PASSWORD),
-            params={"search": titulo, "per_page": 5},
-            timeout=20
-        )
-
-        if resp.status_code != 200:
-            return False
-
-        titulo_limpo = titulo.lower().strip()
-
-        for post in resp.json():
-            wp_title = BeautifulSoup(post.get("title", {}).get("rendered", ""), "lxml").get_text().lower().strip()
-            if titulo_limpo == wp_title:
-                return True
-
-        return False
-
-    except Exception as e:
-        print("Erro ao verificar duplicado:", e)
-        return False
-
-
 def publicar(titulo, conteudo, categoria, imagem_id, auto):
     status = "publish" if auto else "draft"
+
     categoria_id = buscar_categoria(categoria)
 
     payload = {
@@ -418,6 +323,32 @@ def publicar(titulo, conteudo, categoria, imagem_id, auto):
     except Exception as e:
         print("ERRO AO PUBLICAR:", e)
         time.sleep(3)
+        return False
+
+
+def ja_existe_no_wordpress(titulo):
+    try:
+        resp = requests.get(
+            f"{WP_URL}/wp-json/wp/v2/posts",
+            auth=(WP_USERNAME, WP_APP_PASSWORD),
+            params={"search": titulo, "per_page": 5},
+            timeout=20
+        )
+
+        if resp.status_code != 200:
+            return False
+
+        titulo_limpo = titulo.lower().strip()
+
+        for post in resp.json():
+            wp_title = BeautifulSoup(post.get("title", {}).get("rendered", ""), "lxml").get_text().lower().strip()
+            if titulo_limpo == wp_title:
+                return True
+
+        return False
+
+    except Exception as e:
+        print("Erro ao verificar duplicado:", e)
         return False
 
 
@@ -452,32 +383,6 @@ def processar_noticia(item):
     imagem_id = None
 
     return publicar(manchete, conteudo_final, categoria, imagem_id, auto)
-
-
-def main():
-    total = 0
-
-    for fonte in fontes:
-        if total >= MAX_TOTAL_NOTICIAS:
-            break
-
-        print("Fonte:", fonte["url"])
-
-        itens = coletar_links_da_pagina(fonte)
-
-        for item in itens:
-            if total >= MAX_TOTAL_NOTICIAS:
-                break
-
-            sucesso = processar_noticia(item)
-
-            if sucesso:
-                total += 1
-                print("Total publicado/processado:", total)
-
-            time.sleep(20)
-
-    print("Finalizado. Total:", total)
 
 
 def main():
