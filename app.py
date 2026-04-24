@@ -80,10 +80,11 @@ def titulo_valido(titulo):
         return False
 
     ruins = [
-        "menu", "buscar", "pesquisar", "compartilhar", "facebook",
-        "instagram", "youtube", "newsletter", "publicidade",
-        "home", "início", "politica de privacidade"
-    ]
+    "pular para o conteúdo","últimas notícias","ultimas noticias",
+    "bom dia","inter tv","rota inter","acessibilidade","contatos",
+    "órgãos","orgaosmunicipais","vídeos","videos",
+    "região dos lagos","norte fluminense","inter tv rural","rota inter tv"
+]
 
     if any(r in t for r in ruins):
         return False
@@ -435,7 +436,7 @@ def processar_noticia(item):
         print("Já existe no WordPress. Pulando.")
         return False
 
-    imagem_id = upload_imagem(imagem) if imagem else None
+    imagem_id = None
 
     publicar(manchete, conteudo_final, categoria, imagem_id, auto)
     return True
@@ -453,17 +454,13 @@ def main():
         itens = coletar_links_da_pagina(fonte)
 
         for item in itens:
-            if total >= MAX_TOTAL_NOTICIAS:
-                break
+    if total >= MAX_TOTAL_NOTICIAS:
+        break
 
-            sucesso = processar_noticia(item)
+    sucesso = processar_noticia(item)
 
-            if sucesso:
-                total += 1
-                print("Total publicado/processado:", total)
+    if sucesso:
+        total += 1
+        print("Total publicado/processado:", total)
 
-    print("Finalizado. Total:", total)
-
-
-if __name__ == "__main__":
-    main()
+    time.sleep(2)
