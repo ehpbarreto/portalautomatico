@@ -402,12 +402,12 @@ def publicar(titulo, conteudo, categoria, imagem_id, auto):
         )
 
         print("Publicação:", response.status_code, response.text[:200])
-return response.status_code in [200, 201]
+        return response.status_code in [200, 201]
 
     except Exception as e:
-    print("ERRO AO PUBLICAR:", e)
-    time.sleep(3)
-    return False
+        print("ERRO AO PUBLICAR:", e)
+        time.sleep(3)
+        return False
 
 
 def processar_noticia(item):
@@ -440,7 +440,7 @@ def processar_noticia(item):
 
     imagem_id = None
 
-    publicar(manchete, conteudo_final, categoria, imagem_id, auto)
+    return publicar(manchete, conteudo_final, categoria, imagem_id, auto)
 
 
 def main():
