@@ -18,7 +18,8 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36"
 }
 
-MAX_TOTAL_NOTICIAS = 2
+MAX_TOTAL_NOTICIAS = 3
+PAUSA_ENTRE_POSTS = 90
 
 titulos_usados = set()
 links_usados = set()
@@ -60,7 +61,9 @@ def url_valida(link):
         "login", "cadastro", "assinatura", "newsletter",
         "privacy", "politica-de-privacidade", "termos",
         "lps.infomoney", "docs.google.com", "leismunicipais",
-        "planner", "formulario", "formulário"
+        "planner", "formulario", "formulário", "mapa-do-site",
+        "servicosdigitais", "dados-municipais", "mapas-municipais",
+        "orgaosmunicipais", "acessibilidade"
     ]
 
     for bloqueio in bloqueios:
@@ -79,7 +82,7 @@ def titulo_valido(titulo):
 
     t = titulo.lower().strip()
 
-    if len(t) < 15:
+    if len(t) < 18:
         return False
 
     ruins = [
@@ -95,7 +98,11 @@ def titulo_valido(titulo):
         "região dos lagos", "norte fluminense", "aplicação visual",
         "estrutura pmm", "concursos públicos", "alto contraste",
         "poder executivo", "ir para a busca", "lista de leis municipais",
-        "avisos e editais", "cadastro de fornecedores"
+        "avisos e editais", "cadastro de fornecedores",
+        "serviços digitais", "servicos digitais", "dados municipais",
+        "mapas municipais", "horário eleitoral", "jovem pan contra o crime",
+        "minhas finanças", "cotações e indicadores", "viagem & gastronomia",
+        "distrito federal", "brasil/política/economia"
     ]
 
     for ruim in ruins:
@@ -163,12 +170,6 @@ def extrair_conteudo(url):
         for tag in soup(["script", "style", "noscript", "svg", "form", "header", "footer"]):
             tag.decompose()
 
-        imagem = None
-
-        og_img = soup.find("meta", property="og:image")
-        if og_img and og_img.get("content"):
-            imagem = og_img.get("content")
-
         candidatos = []
 
         seletores = [
@@ -186,14 +187,14 @@ def extrair_conteudo(url):
 
         if candidatos:
             candidatos.sort(key=len, reverse=True)
-            return candidatos[0][:4500], imagem
+            return candidatos[0][:4500]
 
         texto_total = limpar_texto(soup.get_text(" ", strip=True))
-        return texto_total[:3500], imagem
+        return texto_total[:3500]
 
     except Exception as e:
         print("Erro ao extrair conteúdo:", url, e)
-        return "", None
+        return ""
 
 
 def gerar_texto(titulo_original, conteudo_base, categoria):
@@ -269,63 +270,6 @@ def limpar_resposta_ia(texto):
     return manchete, conteudo.strip()
 
 
-def buscar_categoria(nome):
-    try:
-        resp = requests.get(
-            f"{WP_URL}/wp-json/wp/v2/categories",
-            auth=(WP_USERNAME, WP_APP_PASSWORD),
-            params={"search": nome, "per_page": 20},
-            timeout=20
-        )
-
-        if resp.status_code != 200:
-            return None
-
-        for cat in resp.json():
-            if cat.get("name", "").strip().lower() == nome.strip().lower():
-                return cat["id"]
-
-        return None
-
-    except Exception as e:
-        print("Erro ao buscar categoria:", e)
-        return None
-
-
-def publicar(titulo, conteudo, categoria, imagem_id, auto):
-    status = "publish" if auto else "draft"
-
-    categoria_id = buscar_categoria(categoria)
-
-    payload = {
-        "title": titulo,
-        "content": conteudo,
-        "status": status
-    }
-
-    if categoria_id:
-        payload["categories"] = [categoria_id]
-
-    if imagem_id:
-        payload["featured_media"] = imagem_id
-
-    try:
-        response = requests.post(
-            f"{WP_URL}/wp-json/wp/v2/posts",
-            auth=(WP_USERNAME, WP_APP_PASSWORD),
-            json=payload,
-            timeout=20
-        )
-
-        print("Publicação:", response.status_code, response.text[:200])
-        return response.status_code in [200, 201]
-
-    except Exception as e:
-        print("ERRO AO PUBLICAR:", e)
-        time.sleep(3)
-        return False
-
-
 def ja_existe_no_wordpress(titulo):
     try:
         resp = requests.get(
@@ -341,7 +285,11 @@ def ja_existe_no_wordpress(titulo):
         titulo_limpo = titulo.lower().strip()
 
         for post in resp.json():
-            wp_title = BeautifulSoup(post.get("title", {}).get("rendered", ""), "lxml").get_text().lower().strip()
+            wp_title = BeautifulSoup(
+                post.get("title", {}).get("rendered", ""),
+                "lxml"
+            ).get_text().lower().strip()
+
             if titulo_limpo == wp_title:
                 return True
 
@@ -350,6 +298,48 @@ def ja_existe_no_wordpress(titulo):
     except Exception as e:
         print("Erro ao verificar duplicado:", e)
         return False
+
+
+def publicar(titulo, conteudo, categoria, auto):
+    status = "publish" if auto else "draft"
+
+    payload = {
+        "title": titulo,
+        "content": conteudo,
+        "status": status
+    }
+
+    tentativas = 4
+
+    for tentativa in range(tentativas):
+        try:
+            response = requests.post(
+                f"{WP_URL}/wp-json/wp/v2/posts",
+                auth=(WP_USERNAME, WP_APP_PASSWORD),
+                json=payload,
+                timeout=20
+            )
+
+            print(f"Tentativa {tentativa + 1}: {response.status_code}")
+
+            if response.status_code in [200, 201]:
+                print("Publicado com sucesso")
+                return True
+
+            if response.status_code == 429:
+                espera = 90
+                print(f"Bloqueado por limite 429. Aguardando {espera}s...")
+                time.sleep(espera)
+                continue
+
+            print("Erro ao publicar:", response.status_code, response.text[:200])
+            return False
+
+        except Exception as e:
+            print("Erro ao publicar:", e)
+            time.sleep(20)
+
+    return False
 
 
 def processar_noticia(item):
@@ -361,7 +351,7 @@ def processar_noticia(item):
     print("Processando:", titulo_original)
     print("Link:", link)
 
-    conteudo_base, imagem = extrair_conteudo(link)
+    conteudo_base = extrair_conteudo(link)
 
     if len(conteudo_base) < 80:
         conteudo_base = titulo_original
@@ -380,9 +370,7 @@ def processar_noticia(item):
         print("Já existe no WordPress. Pulando.")
         return False
 
-    imagem_id = None
-
-    return publicar(manchete, conteudo_final, categoria, imagem_id, auto)
+    return publicar(manchete, conteudo_final, categoria, auto)
 
 
 def main():
@@ -406,7 +394,7 @@ def main():
                 total += 1
                 print("Total publicado/processado:", total)
 
-            time.sleep(20)
+            time.sleep(PAUSA_ENTRE_POSTS)
 
     print("Finalizado. Total:", total)
 
