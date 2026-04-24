@@ -23,20 +23,20 @@ titulos_usados = set()
 links_usados = set()
 
 fontes = [
-    {"url": "https://g1.globo.com/rj/norte-fluminense/", "categoria": "Norte Fluminense", "auto": True, "limite": 1},
-    {"url": "https://g1.globo.com/rj/regiao-dos-lagos/", "categoria": "Região dos Lagos", "auto": True, "limite": 1},
+    {"url": "https://g1.globo.com/rj/norte-fluminense/", "categoria": "Norte Fluminense", "auto": True, "limite": 3},
+    {"url": "https://g1.globo.com/rj/regiao-dos-lagos/", "categoria": "Região dos Lagos", "auto": True, "limite": 3},
 
-    {"url": "https://www.rj.gov.br/noticias", "categoria": "Estado do RJ", "auto": False, "limite": 1},
-    {"url": "https://macae.rj.gov.br/noticias", "categoria": "Macaé", "auto": False, "limite": 1},
-    {"url": "https://www.riodasostras.rj.gov.br/noticias/", "categoria": "Rio das Ostras", "auto": False, "limite": 1},
-    {"url": "https://www.sjb.rj.gov.br/site/noticias", "categoria": "São João da Barra", "auto": False, "limite": 1},
-    {"url": "https://www.campos.rj.gov.br/ultimas-noticias.php", "categoria": "Campos", "auto": False, "limite": 1},
+    {"url": "https://www.rj.gov.br/noticias", "categoria": "Estado do RJ", "auto": False, "limite": 3},
+    {"url": "https://macae.rj.gov.br/noticias", "categoria": "Macaé", "auto": False, "limite": 3},
+    {"url": "https://www.riodasostras.rj.gov.br/noticias/", "categoria": "Rio das Ostras", "auto": False, "limite": 3},
+    {"url": "https://www.sjb.rj.gov.br/site/noticias", "categoria": "São João da Barra", "auto": False, "limite": 3},
+    {"url": "https://www.campos.rj.gov.br/ultimas-noticias.php", "categoria": "Campos", "auto": False, "limite": 3},
 
-    {"url": "https://ge.globo.com/", "categoria": "Esporte", "auto": True, "limite": 1},
-    {"url": "https://jovempan.com.br/noticias/politica", "categoria": "Política", "auto": True, "limite": 1},
-    {"url": "https://www.infomoney.com.br/ultimas-noticias/", "categoria": "Economia", "auto": True, "limite": 1},
-    {"url": "https://www.metropoles.com/entretenimento", "categoria": "Entretenimento", "auto": True, "limite": 1},
-    {"url": "https://www.cnnbrasil.com.br/internacional/", "categoria": "Mundo", "auto": True, "limite": 1},
+    {"url": "https://ge.globo.com/", "categoria": "Esporte", "auto": True, "limite": 3},
+    {"url": "https://jovempan.com.br/noticias/politica", "categoria": "Política", "auto": True, "limite": 3},
+    {"url": "https://www.infomoney.com.br/ultimas-noticias/", "categoria": "Economia", "auto": True, "limite": 3},
+    {"url": "https://www.metropoles.com/entretenimento", "categoria": "Entretenimento", "auto": True, "limite": 3},
+    {"url": "https://www.cnnbrasil.com.br/internacional/", "categoria": "Mundo", "auto": True, "limite": 3},
 ]
 
 
@@ -102,10 +102,10 @@ def coletar_links_da_pagina(fonte):
         if not url_valida(link):
             continue
 
-        if not parece_noticia(link):
-            continue
+        # if not parece_noticia(link):
+        #     continue
 
-        if len(titulo) < 25:
+        if len(titulo) < 15:
             continue
 
         # Evita links externos inúteis, mas permite subdomínios Globo, CNN etc.
@@ -428,7 +428,7 @@ def processar_noticia(item):
 
     conteudo_base, imagem = extrair_conteudo(link)
 
-    if len(conteudo_base) < 150:
+    if len(conteudo_base) < 80:
         print("Conteúdo fraco. Usando título como base.")
         conteudo_base = titulo_original
 
