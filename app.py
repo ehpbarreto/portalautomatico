@@ -18,7 +18,7 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36"
 }
 
-MAX_TOTAL_NOTICIAS = 3
+MAX_TOTAL_NOTICIAS = 2
 titulos_usados = set()
 links_usados = set()
 
@@ -83,7 +83,9 @@ def titulo_valido(titulo):
     "pular para o conteúdo","últimas notícias","ultimas noticias",
     "bom dia","inter tv","rota inter","acessibilidade","contatos",
     "órgãos","orgaosmunicipais","vídeos","videos",
-    "região dos lagos","norte fluminense","inter tv rural","rota inter tv"
+    "região dos lagos","norte fluminense","inter tv rural","rota inter tv","planner",
+"mapa do site","cadastro","licitações","licitacoes","google","docs.google",
+        "formulário","formulario","infomoney","metropoles.com","cnnbrasil.com.br"
 ]
 
     if any(r in t for r in ruins):
@@ -123,6 +125,15 @@ def coletar_links_da_pagina(fonte):
 
         if chave_titulo in titulos_usados:
             continue
+         
+        if "lps.infomoney" in link_lower:
+    return False
+
+         if "docs.google.com" in link_lower:
+    return False
+
+         if "leismunicipais" in link_lower:
+    return False
 
         links_usados.add(chave_link)
         titulos_usados.add(chave_titulo)
@@ -379,7 +390,7 @@ def ja_existe_no_wordpress(titulo):
 
 def publicar(titulo, conteudo, categoria, imagem_id, auto):
     status = "publish" if auto else "draft"
-    categoria_id = criar_categoria(categoria)
+    categoria_id = buscar_categoria(categoria)
 
     payload = {
         "title": titulo,
@@ -464,7 +475,7 @@ def main():
                 total += 1
                 print("Total publicado/processado:", total)
 
-            time.sleep(12)
+            time.sleep(20)
 
     print("Finalizado. Total:", total)
 
@@ -490,7 +501,7 @@ def main():
                 total += 1
                 print("Total publicado/processado:", total)
 
-            time.sleep(12)
+            time.sleep(20)
 
     print("Finalizado. Total:", total)
 
