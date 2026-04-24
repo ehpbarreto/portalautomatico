@@ -19,19 +19,21 @@ titulos_usados = set()
 # FEEDS
 # =========================
 
-feeds = [
-    # ===== AUTOMÁTICO =====
-    {"url": "https://g1.globo.com/rss/g1/", "categoria": "Brasil", "auto": True},
-    {"url": "https://g1.globo.com/economia/rss/g1/", "categoria": "Economia", "auto": True},
-    {"url": "https://g1.globo.com/mundo/rss/g1/", "categoria": "Mundo", "auto": True},
-    {"url": "https://ge.globo.com/rss/ge/", "categoria": "Esporte", "auto": True},
-    {"url": "https://rss.uol.com.br/feed/entretenimento.xml", "categoria": "Entretenimento", "auto": True},
+fontes = [
+    {"url": "https://g1.globo.com/rj/norte-fluminense/", "categoria": "Norte Fluminense", "auto": True},
+    {"url": "https://g1.globo.com/rj/regiao-dos-lagos/", "categoria": "Região dos Lagos", "auto": True},
 
-    # ===== REGIONAIS (RASCU NHO) =====
-    {"url": "https://www.noticiasmacae.com/feed", "categoria": "Macaé", "auto": False},
-    {"url": "https://cliquediario.com.br/feed", "categoria": "Região", "auto": False},
-    {"url": "https://riodasostrasjornal.com/feed", "categoria": "Rio das Ostras", "auto": False},
-    {"url": "https://saojoaodabarranews.com.br/feed", "categoria": "São João da Barra", "auto": False}
+    {"url": "https://www.rj.gov.br/noticias", "categoria": "Estado do RJ", "auto": False},
+    {"url": "https://macae.rj.gov.br/noticias", "categoria": "Macaé", "auto": False},
+    {"url": "https://www.riodasostras.rj.gov.br/noticias/", "categoria": "Rio das Ostras", "auto": False},
+    {"url": "https://www.sjb.rj.gov.br/site/noticias", "categoria": "São João da Barra", "auto": False},
+    {"url": "https://www.campos.rj.gov.br/ultimas-noticias.php", "categoria": "Campos", "auto": False},
+
+    {"url": "https://ge.globo.com/", "categoria": "Esporte", "auto": True},
+    {"url": "https://jovempan.com.br/noticias/politica", "categoria": "Política", "auto": True},
+    {"url": "https://www.infomoney.com.br/ultimas-noticias/", "categoria": "Economia", "auto": True},
+    {"url": "https://www.metropoles.com/entretenimento", "categoria": "Entretenimento", "auto": True},
+    {"url": "https://www.cnnbrasil.com.br/internacional/", "categoria": "Mundo", "auto": True},
 ]
 
 # =========================
