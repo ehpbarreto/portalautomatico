@@ -467,10 +467,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-        for item in itens:
-            processar_noticia(item)
-
-
-if __name__ == "__main__":
-    main()
