@@ -18,29 +18,28 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36"
 }
 
-MAX_TOTAL_NOTICIAS = 5
+MAX_TOTAL_NOTICIAS = 6
 PAUSA_ENTRE_POSTS = 90
 
 titulos_usados = set()
 links_usados = set()
 
 fontes = [
-    # REGIONAIS CONFIÁVEIS - PUBLICAÇÃO AUTOMÁTICA
-    {"url": "https://g1.globo.com/rj/norte-fluminense/", "categoria": "Norte Fluminense", "auto": True, "limite": 2},
-    {"url": "https://g1.globo.com/rj/regiao-dos-lagos/", "categoria": "Região dos Lagos", "auto": True, "limite": 2},
+    # 1 REGIONAL
+    {"url": "https://g1.globo.com/rj/norte-fluminense/", "categoria": "Norte Fluminense", "auto": True, "limite": 1},
 
-    # PREFEITURAS - SEMPRE RASCUNHO
-    {"url": "https://macae.rj.gov.br/noticias", "categoria": "Macaé", "auto": False, "limite": 1},
-    {"url": "https://www.riodasostras.rj.gov.br/noticias/", "categoria": "Rio das Ostras", "auto": False, "limite": 1},
-    {"url": "https://www.sjb.rj.gov.br/site/noticias", "categoria": "São João da Barra", "auto": False, "limite": 1},
-    {"url": "https://www.campos.rj.gov.br/ultimas-noticias.php", "categoria": "Campos", "auto": False, "limite": 1},
+    # 1 REGIONAL
+    {"url": "https://g1.globo.com/rj/regiao-dos-lagos/", "categoria": "Região dos Lagos", "auto": True, "limite": 1},
 
-    # NACIONAIS - PUBLICAÇÃO AUTOMÁTICA
+    # 1 NACIONAL (vai variar)
     {"url": "https://ge.globo.com/", "categoria": "Esporte", "auto": True, "limite": 1},
     {"url": "https://jovempan.com.br/noticias/politica", "categoria": "Política", "auto": True, "limite": 1},
     {"url": "https://www.infomoney.com.br/ultimas-noticias/", "categoria": "Economia", "auto": True, "limite": 1},
     {"url": "https://www.metropoles.com/entretenimento", "categoria": "Entretenimento", "auto": True, "limite": 1},
     {"url": "https://www.cnnbrasil.com.br/internacional/", "categoria": "Mundo", "auto": True, "limite": 1},
+
+    # PREFEITURA (rascunho)
+    {"url": "https://macae.rj.gov.br/noticias", "categoria": "Macaé", "auto": False, "limite": 1},
 ]
 
 
