@@ -2,6 +2,7 @@ import os
 import re
 import time
 import html
+import random
 import requests
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
@@ -18,28 +19,27 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36"
 }
 
-MAX_TOTAL_NOTICIAS = 6
-PAUSA_ENTRE_POSTS = 90
+MAX_TOTAL_NOTICIAS = 4
+PAUSA_MIN = 70
+PAUSA_MAX = 120
 
 titulos_usados = set()
 links_usados = set()
 
 fontes = [
-    # 1 REGIONAL
     {"url": "https://g1.globo.com/rj/norte-fluminense/", "categoria": "Norte Fluminense", "auto": True, "limite": 1},
-
-    # 1 REGIONAL
     {"url": "https://g1.globo.com/rj/regiao-dos-lagos/", "categoria": "Região dos Lagos", "auto": True, "limite": 1},
 
-    # 1 NACIONAL (vai variar)
     {"url": "https://ge.globo.com/", "categoria": "Esporte", "auto": True, "limite": 1},
     {"url": "https://jovempan.com.br/noticias/politica", "categoria": "Política", "auto": True, "limite": 1},
     {"url": "https://www.infomoney.com.br/ultimas-noticias/", "categoria": "Economia", "auto": True, "limite": 1},
     {"url": "https://www.metropoles.com/entretenimento", "categoria": "Entretenimento", "auto": True, "limite": 1},
     {"url": "https://www.cnnbrasil.com.br/internacional/", "categoria": "Mundo", "auto": True, "limite": 1},
 
-    # PREFEITURA (rascunho)
     {"url": "https://macae.rj.gov.br/noticias", "categoria": "Macaé", "auto": False, "limite": 1},
+    {"url": "https://www.riodasostras.rj.gov.br/noticias/", "categoria": "Rio das Ostras", "auto": False, "limite": 1},
+    {"url": "https://www.sjb.rj.gov.br/site/noticias", "categoria": "São João da Barra", "auto": False, "limite": 1},
+    {"url": "https://www.campos.rj.gov.br/ultimas-noticias.php", "categoria": "Campos", "auto": False, "limite": 1},
 ]
 
 
@@ -49,6 +49,12 @@ def limpar_texto(texto):
     texto = html.unescape(texto)
     texto = re.sub(r"\s+", " ", texto)
     return texto.strip()
+
+
+def normalizar(texto):
+    texto = texto.lower().strip()
+    texto = re.sub(r"\W+", "", texto)
+    return texto
 
 
 def url_valida(link):
@@ -65,7 +71,10 @@ def url_valida(link):
         "lps.infomoney", "docs.google.com", "leismunicipais",
         "planner", "formulario", "formulário", "mapa-do-site",
         "servicosdigitais", "dados-municipais", "mapas-municipais",
-        "orgaosmunicipais", "acessibilidade"
+        "orgaosmunicipais", "acessibilidade",
+        "especial-publicitario", "publicidade", "/videos", "/video/",
+        "/autor/", "/colunistas", "/tags/", "/tag/", "/ao-vivo",
+        "ultimas-noticias"
     ]
 
     for bloqueio in bloqueios:
@@ -84,7 +93,7 @@ def titulo_valido(titulo):
 
     t = titulo.lower().strip()
 
-    if len(t) < 18:
+    if len(t) < 25:
         return False
 
     ruins = [
@@ -104,7 +113,8 @@ def titulo_valido(titulo):
         "serviços digitais", "servicos digitais", "dados municipais",
         "mapas municipais", "horário eleitoral", "jovem pan contra o crime",
         "minhas finanças", "cotações e indicadores", "viagem & gastronomia",
-        "distrito federal", "brasil/política/economia"
+        "distrito federal", "brasil/política/economia",
+        "mapa de risco", "cadeia de valor", "bem-vindo", "aplicação visual"
     ]
 
     for ruim in ruins:
@@ -138,7 +148,7 @@ def coletar_links_da_pagina(fonte):
             continue
 
         chave_link = link.split("?")[0].strip().lower()
-        chave_titulo = titulo.lower().strip()
+        chave_titulo = normalizar(titulo)
 
         if chave_link in links_usados:
             continue
@@ -184,15 +194,15 @@ def extrair_conteudo(url):
         for seletor in seletores:
             for item in soup.select(seletor):
                 texto = limpar_texto(item.get_text(" ", strip=True))
-                if len(texto) > 200:
+                if len(texto) > 300:
                     candidatos.append(texto)
 
         if candidatos:
             candidatos.sort(key=len, reverse=True)
-            return candidatos[0][:4500]
+            return candidatos[0][:5500]
 
         texto_total = limpar_texto(soup.get_text(" ", strip=True))
-        return texto_total[:3500]
+        return texto_total[:4000]
 
     except Exception as e:
         print("Erro ao extrair conteúdo:", url, e)
@@ -201,9 +211,9 @@ def extrair_conteudo(url):
 
 def gerar_texto(titulo_original, conteudo_base, categoria):
     prompt = f"""
-Você é redator de um portal de notícias brasileiro.
+Você é jornalista profissional de um portal de notícias brasileiro.
 
-Crie uma matéria jornalística em português do Brasil.
+Crie uma matéria jornalística ORIGINAL, clara e bem desenvolvida em português do Brasil.
 
 Categoria: {categoria}
 Título original: {titulo_original}
@@ -211,22 +221,29 @@ Título original: {titulo_original}
 Conteúdo-base:
 {conteudo_base}
 
-Regras:
+Regras obrigatórias:
 - Escreva 100% em português do Brasil.
-- Crie uma manchete nova e jornalística.
-- Não use as palavras TITULO, CATEGORIA, TAGS ou FONTE.
-- Não inclua link no texto.
-- Não invente fatos.
-- Se o conteúdo estiver fraco, escreva uma matéria curta e conservadora.
-- Máximo de 350 palavras.
+- Crie uma manchete nova, jornalística e natural.
+- NÃO copie frases do conteúdo-base.
+- NÃO invente fatos.
+- NÃO inclua links.
+- NÃO use as palavras TITULO, CATEGORIA, TAGS ou FONTE.
+- Explique o fato principal.
+- Acrescente contexto.
+- Explique o impacto para a região, para o público ou para o Brasil.
+- Evite frases genéricas.
+- O texto deve ter entre 400 e 700 palavras.
 - Use HTML simples com parágrafos <p>...</p>.
+- Não use listas.
 
 Formato obrigatório:
 
 MANCHETE: ...
 TEXTO:
-<p>...</p>
-<p>...</p>
+<p>Primeiro parágrafo...</p>
+<p>Segundo parágrafo...</p>
+<p>Terceiro parágrafo...</p>
+<p>Quarto parágrafo...</p>
 """
 
     resp = client.responses.create(
@@ -267,9 +284,12 @@ def limpar_resposta_ia(texto):
 
     conteudo = "\n".join(corpo).strip()
     conteudo = re.sub(r"(?i)\bfonte\s*:.*", "", conteudo)
-    conteudo = re.sub(r"https?://\S+", "", conteudo)
+    conteudo = re.sub(r"https?://\S+", "", conteudo).strip()
 
-    return manchete, conteudo.strip()
+    if conteudo:
+        conteudo += "\n<p><em>Redação EBN - Portal de Notícias</em></p>"
+
+    return manchete, conteudo
 
 
 def ja_existe_no_wordpress(titulo):
@@ -277,22 +297,27 @@ def ja_existe_no_wordpress(titulo):
         resp = requests.get(
             f"{WP_URL}/wp-json/wp/v2/posts",
             auth=(WP_USERNAME, WP_APP_PASSWORD),
-            params={"search": titulo, "per_page": 5},
+            params={"search": titulo, "per_page": 10},
             timeout=20
         )
 
         if resp.status_code != 200:
             return False
 
-        titulo_limpo = titulo.lower().strip()
+        titulo_limpo = normalizar(titulo)
 
         for post in resp.json():
             wp_title = BeautifulSoup(
                 post.get("title", {}).get("rendered", ""),
                 "lxml"
-            ).get_text().lower().strip()
+            ).get_text()
 
-            if titulo_limpo == wp_title:
+            wp_title_limpo = normalizar(wp_title)
+
+            if titulo_limpo == wp_title_limpo:
+                return True
+
+            if titulo_limpo in wp_title_limpo or wp_title_limpo in titulo_limpo:
                 return True
 
         return False
@@ -325,11 +350,11 @@ def publicar(titulo, conteudo, categoria, auto):
             print(f"Tentativa {tentativa + 1}: {response.status_code}")
 
             if response.status_code in [200, 201]:
-                print("Publicado com sucesso")
+                print("Publicado com sucesso:", status)
                 return True
 
             if response.status_code == 429:
-                espera = 90
+                espera = 120
                 print(f"Bloqueado por limite 429. Aguardando {espera}s...")
                 time.sleep(espera)
                 continue
@@ -339,7 +364,7 @@ def publicar(titulo, conteudo, categoria, auto):
 
         except Exception as e:
             print("Erro ao publicar:", e)
-            time.sleep(20)
+            time.sleep(30)
 
     return False
 
@@ -355,17 +380,19 @@ def processar_noticia(item):
 
     conteudo_base = extrair_conteudo(link)
 
-    if len(conteudo_base) < 80:
-        conteudo_base = titulo_original
+    if len(conteudo_base) < 200:
+        print("Conteúdo base fraco. Pulando.")
+        return False
 
     texto_ia = gerar_texto(titulo_original, conteudo_base, categoria)
     manchete, conteudo_final = limpar_resposta_ia(texto_ia)
 
     if not manchete:
-        manchete = titulo_original
+        print("Sem manchete. Pulando.")
+        return False
 
-    if len(conteudo_final) < 60:
-        print("Texto muito curto. Pulando.")
+    if len(conteudo_final) < 400:
+        print("Conteúdo final fraco. Pulando.")
         return False
 
     if ja_existe_no_wordpress(manchete):
@@ -396,7 +423,9 @@ def main():
                 total += 1
                 print("Total publicado/processado:", total)
 
-            time.sleep(PAUSA_ENTRE_POSTS)
+            pausa = random.randint(PAUSA_MIN, PAUSA_MAX)
+            print(f"Aguardando {pausa}s...")
+            time.sleep(pausa)
 
     print("Finalizado. Total:", total)
 
